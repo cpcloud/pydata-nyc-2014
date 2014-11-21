@@ -2,6 +2,7 @@
 
 from __future__ import print_function
 
+import argparse
 import os
 import time
 import numpy as np
@@ -38,12 +39,19 @@ def time_by(d, grouper='passenger_count', reducer='trip_time_in_secs',
     return np.array(times)
 
 
+def parse_args():
+    p = argparse.ArgumentParser()
+    p.add_argument('filename')
+    return p.parse_args()
+
+
 if __name__ == '__main__':
     groupers = 'passenger_count', 'medallion', 'hack_license'
     reducers = 'trip_time_in_secs', 'trip_distance'
     results = {}
-    filename = os.path.join(os.path.dirname(__file__), os.pardir, 'bcolz',
-                            'trip.bcolz')
+
+    p = parse_args()
+    filename = os.path.abspath(p.filename)
     assert os.path.exists(filename), '%r does not exist' % filename
     trip = Data(filename)
     for grouper, reducer in it.product(groupers, reducers):
