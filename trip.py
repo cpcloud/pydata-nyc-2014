@@ -63,8 +63,12 @@ if __name__ == '__main__':
     p = parse_args()
     filename = os.path.abspath(p.filename)
     assert os.path.exists(filename), '%r does not exist' % filename
-    trip = Data(filename)
-    for grouper, reducer in it.product(groupers, reducers):
+    ncores = cores()[-1]
+    bcolz = Data(filename)
+    trips = [bcolz]
+    if ncores == 32:
+        trips.append(pd.DataFrame(bcolz.data[:]))
+    for trip, grouper, reducer in it.product(trips, groupers, reducers):
         print('%s, %s' % (grouper, reducer))
         results[(grouper, reducer)] = time_by(trip, grouper, reducer)
         print()
