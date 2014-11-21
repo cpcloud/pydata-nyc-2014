@@ -35,10 +35,14 @@ def time_by(d, grouper='passenger_count', reducer='trip_time_in_secs',
     expr = by(getattr(d, grouper), s=getattr(getattr(d, reducer), function)())
     times = []
     for core_count in cores():
-        p = mp.Pool(core_count)
-        with timeit('cores: %d' % core_count, times):
-            compute(expr, map=p.map)
-        p.close()
+        if isinstance(d, pd.DataFrame):
+            with timeit('cores: %d' % core_count, times):
+                getattr(d.groupby(grouper)[reducer], function)()
+        else:
+            p = mp.Pool(core_count)
+            with timeit('cores: %d' % core_count, times):
+                compute(expr, map=p.map)
+            p.close()
     return np.array(times)
 
 
@@ -69,8 +73,8 @@ if __name__ == '__main__':
     if ncores == 32:
         trips.append(pd.DataFrame(bcolz.data[:]))
     for trip, grouper, reducer in it.product(trips, groupers, reducers):
-        print('%s, %s' % (grouper, reducer))
-        results[(grouper, reducer)] = time_by(trip, grouper, reducer)
+        print('%s, %s, %s' % (type(trip).__name__, grouper, reducer))
+        results[(type(trip).__name__, grouper, reducer)] = time_by(trip, grouper, reducer)
         print()
     result = pd.DataFrame(results)
     result.to_csv(os.path.join('results',
