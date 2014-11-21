@@ -69,4 +69,5 @@ if __name__ == '__main__':
         results[(grouper, reducer)] = time_by(trip, grouper, reducer)
         print()
     result = pd.DataFrame(results)
-    result.to_csv(os.path.join('results', 'trip_by_results.csv'))
+    result.to_csv(os.path.join('results',
+                               'trip_by_results_%d.csv' % cores()[-1]))
