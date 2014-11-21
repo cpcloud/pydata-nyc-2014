@@ -25,13 +25,16 @@ def timeit(name, result):
     print('%s took %.3g s' % (name, diff))
 
 
+def cores():
+    cpus = psutil.NUM_CPUS
+    return [2 ** i for i in range(int(np.log2(cpus)) + 1)]
+
+
 def time_by(d, grouper='passenger_count', reducer='trip_time_in_secs',
             function='sum'):
     expr = by(getattr(d, grouper), s=getattr(getattr(d, reducer), function)())
     times = []
-    cpus = psutil.NUM_CPUS
-    cores = [2 ** i for i in range(int(np.log2(cpus)) + 1)]
-    for core_count in cores:
+    for core_count in cores():
         p = mp.Pool(core_count)
         with timeit('cores: %d' % core_count, times):
             compute(expr, map=p.map)
@@ -43,6 +46,13 @@ def parse_args():
     p = argparse.ArgumentParser()
     p.add_argument('filename')
     return p.parse_args()
+
+
+def read_results(filename, header=(0, 1), index_col=0, ncores=None):
+    df = pd.read_csv(filename, header=list(header), index_col=index_col)
+    df.columns.names = ['grouper', 'reducer']
+    df.index = pd.Index(ncores or cores(), name='cores')
+    return df.T
 
 
 if __name__ == '__main__':
